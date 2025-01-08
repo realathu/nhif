@@ -57,6 +57,7 @@ export function StudentForm() {
   const [userEmail, setUserEmail] = useState<string>("");
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [submissionStatus, setSubmissionStatus] = useState<SubmissionStatus | null>(null);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
   useEffect(() => {
     // Check authentication
@@ -206,12 +207,18 @@ export function StudentForm() {
         throw new Error('Submission failed');
       }
 
-      alert('Your information has been successfully submitted. You will receive your control number via the provided phone number soon.');
+      setShowSuccessDialog(true);
     } catch (error) {
       alert(error.message || "Failed to submit form");
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    window.location.href = '/login';
   };
 
   return (
@@ -478,6 +485,47 @@ export function StudentForm() {
         </div>
       </form>
 
+      {/* Success Dialog */}
+      {showSuccessDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <CheckCircle size={32} weight="fill" className="text-green-500" />
+              <h2 className="text-xl font-semibold text-gray-900">Successfully Submitted</h2>
+            </div>
+            
+            <div className="space-y-4">
+              <p className="text-gray-600">
+                Dear {formData.first_name},<br /><br />
+                Your information has been submitted to the Dean's Office. You will receive your NHIF control number via SMS for payment once processed.
+              </p>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="font-medium text-gray-900 mb-2">What's Next:</h3>
+                <ul className="text-gray-600 space-y-1">
+                  <li className="flex items-center gap-2">
+                    <span className="block w-1 h-1 rounded-full bg-gray-400"></span>
+                    Wait for an SMS with your NHIF control number
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="block w-1 h-1 rounded-full bg-gray-400"></span>
+                    Use the control number to make your payment
+                  </li>
+                </ul>
+              </div>
+
+              <button
+                onClick={handleLogout}
+                className="w-full px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
+              >
+                Close & Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Dialog */}
       {showConfirmation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
