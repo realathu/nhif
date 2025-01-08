@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as yup from "yup";
+import { Warning, CheckCircle, CircleNotch } from '@phosphor-icons/react';
+import { checkSubmissionStatus, SubmissionStatus } from '../services/students';
 
 const validationSchema = yup.object().shape({
   form_four_index_no: yup.string().required("Form Four Index Number is required"),
@@ -31,6 +33,7 @@ const validationSchema = yup.object().shape({
 
 export function StudentForm() {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState({
     form_four_index_no: "",
     first_name: "",
@@ -52,6 +55,8 @@ export function StudentForm() {
   const [courseOptions, setCourseOptions] = useState<string[]>([]);
   const [admissionDates, setAdmissionDates] = useState<string[]>([]);
   const [userEmail, setUserEmail] = useState<string>("");
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [submissionStatus, setSubmissionStatus] = useState<SubmissionStatus | null>(null);
 
   useEffect(() => {
     // Check authentication
@@ -63,7 +68,21 @@ export function StudentForm() {
       return;
     }
 
-    // Fetch user email from token
+    // Check submission status
+    const checkStatus = async () => {
+      try {
+        const status = await checkSubmissionStatus();
+        setSubmissionStatus(status);
+      } catch (error) {
+        console.error('Failed to check submission status:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkStatus();
+
+    // Get user email from token
     try {
       const tokenData = JSON.parse(atob(token.split('.')[1]));
       setUserEmail(tokenData.email || "Student");
@@ -100,6 +119,46 @@ export function StudentForm() {
     fetchDynamicFields();
   }, [navigate]);
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <CircleNotch size={32} className="text-blue-600 animate-spin" />
+      </div>
+    );
+  }
+
+  if (submissionStatus?.submitted) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <CheckCircle size={32} weight="fill" className="text-green-500" />
+            <h2 className="text-xl font-semibold text-gray-900">Already Submitted</h2>
+          </div>
+          
+          <div className="space-y-4">
+            <p className="text-gray-600">
+              Dear {submissionStatus.name},<br />
+              Your NHIF details were submitted on {new Date(submissionStatus.submissionDate).toLocaleDateString()}. 
+              For any changes, please contact the Dean's Office.
+            </p>
+
+            <button
+              onClick={() => {
+                localStorage.removeItem('token');
+                localStorage.removeItem('role');
+                window.location.href = '/login';
+              }}
+              className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -111,8 +170,23 @@ export function StudentForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      setIsSubmitting(true);
       await validationSchema.validate(formData, { abortEarly: false });
+      setShowConfirmation(true);
+    } catch (error) {
+      if (error.inner) {
+        const newErrors = {};
+        error.inner.forEach(err => {
+          newErrors[err.path] = err.message;
+        });
+        setErrors(newErrors);
+      }
+    }
+  };
+
+  const handleConfirmedSubmit = async () => {
+    try {
+      setIsSubmitting(true);
+      setShowConfirmation(false);
       
       const token = localStorage.getItem('token');
       if (!token) {
@@ -134,24 +208,10 @@ export function StudentForm() {
 
       alert('Your information has been successfully submitted. You will receive your control number via the provided phone number soon.');
     } catch (error) {
-      if (error.inner) {
-        const newErrors = {};
-        error.inner.forEach(err => {
-          newErrors[err.path] = err.message;
-        });
-        setErrors(newErrors);
-      } else {
-        alert(error.message || "Failed to submit form");
-      }
+      alert(error.message || "Failed to submit form");
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    window.location.href = '/login';
   };
 
   return (
@@ -163,7 +223,11 @@ export function StudentForm() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
           <span className="text-sm text-gray-600">Welcome, {userEmail}</span>
           <button
-            onClick={handleLogout}
+            onClick={() => {
+              localStorage.removeItem('token');
+              localStorage.removeItem('role');
+              window.location.href = '/login';
+            }}
             className="text-sm text-red-600 hover:text-red-800 transition-colors"
           >
             Logout
@@ -413,6 +477,38 @@ export function StudentForm() {
           </button>
         </div>
       </form>
+
+      {showConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <Warning size={24} weight="fill" className="text-yellow-500" />
+              <h2 className="text-lg font-semibold text-gray-900">Confirmation</h2>
+            </div>
+            
+            <p className="text-gray-600 mb-6">
+              Please ensure all information provided matches your official documents. Incorrect information may affect your NHIF registration.
+            </p>
+            
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowConfirmation(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                disabled={isSubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmedSubmit}
+                disabled={isSubmitting}
+                className="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors disabled:bg-green-300"
+              >
+                {isSubmitting ? 'Submitting...' : 'Confirm & Submit'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

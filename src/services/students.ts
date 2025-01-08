@@ -47,6 +47,12 @@ export type DashboardStats = {
   };
 };
 
+export interface SubmissionStatus {
+  submitted: boolean;
+  name?: string;
+  submissionDate?: string;
+}
+
 const API_BASE = 'http://localhost:3000';
 
 export async function fetchStudents(): Promise<Student[]> {
@@ -231,6 +237,21 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
   if (!response.ok) {
     const data = await response.json();
     throw new Error(data.error || 'Failed to fetch dashboard statistics');
+  }
+
+  return response.json();
+}
+
+export async function checkSubmissionStatus(): Promise<SubmissionStatus> {
+  const token = getAuthToken();
+  const response = await fetch(`${API_BASE}/students/submission-status`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to check submission status');
   }
 
   return response.json();

@@ -176,6 +176,38 @@ app.post('/students/submit', authMiddleware, async (req, res) => {
   }
 });
 
+// Get student submission status
+app.get('/students/submission-status', authMiddleware, async (req, res) => {
+  try {
+    const studentInfo = db.prepare(`
+      SELECT 
+        student_info.first_name,
+        student_info.middle_name,
+        student_info.last_name,
+        student_info.created_at
+      FROM student_info
+      WHERE student_info.user_id = ?
+    `).get(req.user.id);
+
+    if (!studentInfo) {
+      return res.json({ submitted: false });
+    }
+
+    const fullName = [studentInfo.first_name, studentInfo.middle_name, studentInfo.last_name]
+      .filter(Boolean)
+      .join(' ');
+
+    res.json({
+      submitted: true,
+      name: fullName,
+      submissionDate: studentInfo.created_at
+    });
+  } catch (error) {
+    console.error('Failed to get submission status:', error);
+    res.status(500).json({ error: 'Failed to get submission status' });
+  }
+});
+
 // Protected routes
 app.get('/students', authMiddleware, adminOnly, (req, res) => {
   try {
