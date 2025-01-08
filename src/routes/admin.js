@@ -57,5 +57,60 @@ router.post('/students', async (req, res) => {
   }
 });
 
+// Export all pending students
+router.post('/students/export-all-pending', async (req, res) => {
+  try {
+    // Get all pending students
+    const result = await client.execute({
+      sql: `SELECT * FROM student_info WHERE is_exported = false`
+    });
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: 'No pending students to export' });
+    }
+
+    // Create Excel workbook
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(result.rows.map(student => ({
+      'First Name': student.first_name,
+      'Middle Name': student.middle_name,
+      'Last Name': student.last_name,
+      'Form Four Index': student.form_four_index_no,
+      'Date of Birth': student.date_of_birth,
+      'Marital Status': student.marital_status,
+      'Gender': student.gender,
+      'Admission Date': student.admission_date,
+      'Mobile Number': student.mobile_no,
+      'Course': student.course_name,
+      'Year of Study': student.year_of_study,
+      'Course Duration': student.course_duration,
+      'National ID': student.national_id,
+      'Admission Number': student.admission_no
+    })));
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Students');
+
+    // Generate buffer
+    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    // Update exported status for all students
+    await client.execute({
+      sql: `UPDATE student_info 
+            SET is_exported = true, 
+                exported_at = CURRENT_TIMESTAMP 
+            WHERE is_exported = false`,
+    });
+
+    // Send file
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=students.xlsx');
+    res.send(excelBuffer);
+  } catch (error) {
+    console.error('Export error:', error);
+    res.status(500).json({ error: 'Failed to export students' });
+  }
+});
+
 // Export endpoints remain the same
 // ... rest of the file remains unchanged

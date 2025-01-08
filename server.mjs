@@ -506,6 +506,51 @@ app.post('/students/export/selected', authMiddleware, adminOnly, async (req, res
   }
 });
 
+// Export all pending students
+app.post('/admin/students/export-all-pending', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    // Get all pending students with full details
+    const pendingStudents = db.prepare(`
+      SELECT 
+        student_info.*,
+        users.email
+      FROM student_info
+      JOIN users ON student_info.user_id = users.id
+      WHERE student_info.is_exported = FALSE
+    `).all();
+
+    if (pendingStudents.length === 0) {
+      return res.status(400).json({ error: 'No pending students to export' });
+    }
+
+    // Generate Excel file
+    const excelBuffer = generateExcelFile(pendingStudents);
+
+    // Update export status within a transaction
+    const updateExportStatus = db.transaction(() => {
+      db.prepare(`
+        UPDATE student_info 
+        SET is_exported = TRUE, 
+            exported_at = CURRENT_TIMESTAMP 
+        WHERE is_exported = FALSE
+      `).run();
+    });
+
+    // Run the transaction
+    updateExportStatus();
+
+    // Set response headers for Excel download
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=pending_students_${Date.now()}.xlsx`);
+    
+    // Send the Excel file
+    res.send(excelBuffer);
+  } catch (error) {
+    console.error('Failed to export pending students:', error);
+    res.status(500).json({ error: 'Failed to export pending students' });
+  }
+});
+
 // Get dashboard statistics
 app.get('/dashboard/stats', authMiddleware, adminOnly, (req, res) => {
   try {

@@ -194,6 +194,32 @@ export async function fetchStudentStats(): Promise<StudentStats> {
   return response.json();
 }
 
+export async function exportAllPending(): Promise<void> {
+  const token = getAuthToken();
+  const response = await fetch(`${API_BASE}/admin/students/export-all-pending`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.error || 'Failed to export students');
+  }
+
+  // Convert response to blob and download
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'students.xlsx';
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+}
+
 export async function fetchDashboardStats(): Promise<DashboardStats> {
   const token = getAuthToken();
   const response = await fetch(`${API_BASE}/dashboard/stats`, {
