@@ -673,6 +673,38 @@ app.get('/dashboard/stats', authMiddleware, adminOnly, (req, res) => {
   }
 });
 
+// Add this new endpoint for clearing student data
+app.post('/admin/clear-student-data', authMiddleware, adminOnly, (req, res) => {
+  try {
+    // Start a transaction
+    db.prepare('BEGIN TRANSACTION').run();
+
+    try {
+      // First, delete from student_info
+      const deleteStudentInfo = db.prepare('DELETE FROM student_info').run();
+      
+      // Then, delete all users except admin
+      const deleteUsers = db.prepare("DELETE FROM users WHERE role = 'student'").run();
+
+      // Commit the transaction if both operations succeed
+      db.prepare('COMMIT').run();
+
+      res.json({
+        message: 'All student data cleared successfully',
+        studentsRemoved: deleteStudentInfo.changes,
+        usersRemoved: deleteUsers.changes
+      });
+    } catch (error) {
+      // If anything fails, roll back the transaction
+      db.prepare('ROLLBACK').run();
+      throw error;
+    }
+  } catch (error) {
+    console.error('Failed to clear student data:', error);
+    res.status(500).json({ error: 'Failed to clear student data' });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });

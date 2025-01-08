@@ -256,3 +256,20 @@ export async function checkSubmissionStatus(): Promise<SubmissionStatus> {
 
   return response.json();
 }
+
+export async function clearAllStudentData(): Promise<{ studentsRemoved: number; usersRemoved: number }> {
+  const token = getAuthToken();
+  const response = await fetch(`${API_BASE}/admin/clear-student-data`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.error || 'Failed to clear student data');
+  }
+
+  return response.json();
+}
