@@ -1,0 +1,4 @@
+{
+  "watch": ["server.mjs"],
+  "ignore": ["node_modules", "src"]
+}
