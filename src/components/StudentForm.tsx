@@ -156,15 +156,15 @@ export function StudentForm() {
 
   return (
     <div className="p-4 max-w-2xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h1 className="text-2xl font-bold text-gray-900">
-          NHIF Registration Form
+          NHIF Student Details
         </h1>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
           <span className="text-sm text-gray-600">Welcome, {userEmail}</span>
           <button
             onClick={handleLogout}
-            className="px-4 py-2 text-sm text-red-600 hover:text-red-800 transition-colors"
+            className="text-sm text-red-600 hover:text-red-800 transition-colors"
           >
             Logout
           </button>
@@ -181,7 +181,7 @@ export function StudentForm() {
               value={formData.form_four_index_no}
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-              placeholder="e.g., S1234/0001/2020"
+              placeholder="e.g., S1375/0123/2021"
             />
             {errors.form_four_index_no && (
               <p className="mt-1 text-sm text-red-600">{errors.form_four_index_no}</p>
@@ -196,6 +196,7 @@ export function StudentForm() {
               value={formData.first_name}
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+              placeholder="e.g., Onesmo"
             />
             {errors.first_name && (
               <p className="mt-1 text-sm text-red-600">{errors.first_name}</p>
@@ -210,6 +211,7 @@ export function StudentForm() {
               value={formData.middle_name}
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+              placeholder="e.g., A"
             />
           </div>
 
@@ -221,6 +223,7 @@ export function StudentForm() {
               value={formData.last_name}
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+              placeholder="e.g., Mbilinyi"
             />
             {errors.last_name && (
               <p className="mt-1 text-sm text-red-600">{errors.last_name}</p>
@@ -235,6 +238,7 @@ export function StudentForm() {
               value={formData.date_of_birth}
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+              placeholder="e.g., 2003-11-14"
             />
             {errors.date_of_birth && (
               <p className="mt-1 text-sm text-red-600">{errors.date_of_birth}</p>
@@ -252,8 +256,6 @@ export function StudentForm() {
               <option value="">Select status</option>
               <option value="Single">Single</option>
               <option value="Married">Married</option>
-              <option value="Divorced">Divorced</option>
-              <option value="Widowed">Widowed</option>
             </select>
             {errors.marital_status && (
               <p className="mt-1 text-sm text-red-600">{errors.marital_status}</p>
@@ -300,12 +302,12 @@ export function StudentForm() {
           <div>
             <label className="block text-sm font-medium text-gray-700">Mobile Number</label>
             <input
-              type="text"
+              type="tel"
               name="mobile_no"
               value={formData.mobile_no}
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-              placeholder="e.g., 0712345678"
+              placeholder="e.g., 0678538349"
             />
             {errors.mobile_no && (
               <p className="mt-1 text-sm text-red-600">{errors.mobile_no}</p>
@@ -376,7 +378,7 @@ export function StudentForm() {
               value={formData.national_id}
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-              placeholder="20 digits number"
+              placeholder="e.g., 20031114451020000345"
             />
             {errors.national_id && (
               <p className="mt-1 text-sm text-red-600">{errors.national_id}</p>
@@ -391,7 +393,7 @@ export function StudentForm() {
               value={formData.admission_no}
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-              placeholder="Your admission number"
+              placeholder="e.g., DSM/BSLM/24/000456"
             />
             {errors.admission_no && (
               <p className="mt-1 text-sm text-red-600">{errors.admission_no}</p>
