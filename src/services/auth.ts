@@ -4,31 +4,6 @@ const TOKEN_KEY = 'token';
 const ROLE_KEY = 'role';
 
 export const auth = {
-  setToken(token: string) {
-    localStorage.setItem(TOKEN_KEY, token);
-  },
-
-  getToken(): string | null {
-    return localStorage.getItem(TOKEN_KEY);
-  },
-
-  setRole(role: string) {
-    localStorage.setItem(ROLE_KEY, role);
-  },
-
-  getRole(): string | null {
-    return localStorage.getItem(ROLE_KEY);
-  },
-
-  logout() {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(ROLE_KEY);
-  },
-
-  isAuthenticated(): boolean {
-    return !!this.getToken();
-  },
-
   async login(email: string, password: string) {
     const response = await fetch(API_ENDPOINTS.login, {
       method: 'POST',
@@ -43,7 +18,10 @@ export const auth = {
       throw new Error(error.message || 'Login failed');
     }
 
-    return response.json();
+    const data = await response.json();
+    this.setToken(data.token);
+    this.setRole(data.role);
+    return data;
   },
 
   async register(email: string, password: string) {
@@ -60,7 +38,35 @@ export const auth = {
       throw new Error(error.message || 'Registration failed');
     }
 
-    return response.json();
+    const data = await response.json();
+    this.setToken(data.token);
+    this.setRole(data.role);
+    return data;
+  },
+
+  setToken(token: string) {
+    localStorage.setItem(TOKEN_KEY, token);
+  },
+
+  getToken() {
+    return localStorage.getItem(TOKEN_KEY);
+  },
+
+  setRole(role: string) {
+    localStorage.setItem(ROLE_KEY, role);
+  },
+
+  getRole() {
+    return localStorage.getItem(ROLE_KEY);
+  },
+
+  logout() {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(ROLE_KEY);
+  },
+
+  isAuthenticated(): boolean {
+    return !!this.getToken();
   }
 };
 

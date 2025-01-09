@@ -1,8 +1,6 @@
-const isDevelopment = process.env.NODE_ENV === 'development';
-
-export const API_BASE = isDevelopment 
-  ? 'http://localhost:3000' 
-  : 'https://library.dmi.ac.tz';
+const API_BASE = import.meta.env.PROD 
+  ? 'https://library.dmi.ac.tz' 
+  : 'http://localhost:3000';
 
 export const API_ENDPOINTS = {
   login: `${API_BASE}/auth/login`,
