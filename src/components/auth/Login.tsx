@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CircleNotch } from '@phosphor-icons/react';
 import { auth } from '../../services/auth';
-import { checkSubmissionStatus } from '../../services/students';
 
 export function Login() {
   const navigate = useNavigate();
@@ -17,19 +16,14 @@ export function Login() {
     setIsLoading(true);
 
     try {
-      const { token, role } = await auth.login(email, password);
-
-      // If student, check submission status
-      if (role === 'student') {
-        const status = await checkSubmissionStatus(token);
-        if (status.submitted) {
-          navigate('/form'); // Will show the status message
-          return;
-        }
-      }
+      const { role } = await auth.login(email, password);
 
       // Navigate based on role
-      navigate(role === 'admin' ? '/admin' : '/form');
+      if (role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/form');
+      }
     } catch (error) {
       console.error('Login error:', error);
       setError('Invalid email or password');

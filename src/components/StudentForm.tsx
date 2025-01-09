@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as yup from 'yup';
 import { Warning, CheckCircle, CircleNotch } from '@phosphor-icons/react';
-import { checkSubmissionStatus, SubmissionStatus } from '../services/students';
+import { checkSubmissionStatus } from '../services/students';
 import { auth } from '../services/auth';
 
 const validationSchema = yup.object().shape({
@@ -35,7 +35,7 @@ const validationSchema = yup.object().shape({
 export function StudentForm() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
-  const [submissionStatus, setSubmissionStatus] = useState<SubmissionStatus | null>(null);
+  const [submissionStatus, setSubmissionStatus] = useState<any>(null);
   const [formData, setFormData] = useState({
     form_four_index_no: "",
     first_name: "",
@@ -69,10 +69,19 @@ export function StudentForm() {
           return;
         }
 
-        const status = await checkSubmissionStatus(token);
-        setSubmissionStatus(status);
+        // Only check status if user is a student
+        if (auth.getRole() === 'student') {
+          const status = await checkSubmissionStatus(token);
+          setSubmissionStatus(status);
+        }
       } catch (error) {
-        console.error('Error checking submission status:', error);
+        if ((error as Error).message === 'Access denied. Only students can check submission status.') {
+          // If admin, just continue without checking status
+          setSubmissionStatus({ submitted: false });
+        } else {
+          console.error('Error checking submission status:', error);
+          navigate('/login');
+        }
       } finally {
         setIsLoading(false);
       }
