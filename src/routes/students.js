@@ -8,9 +8,9 @@ router.use(authMiddleware);
 // Check submission status
 router.get('/status', async (req, res) => {
   try {
-    // Allow both student and admin roles
-    if (!['student', 'admin'].includes(req.user.role)) {
-      return res.status(403).json({ error: 'Access denied' });
+    // Only allow student role
+    if (req.user.role !== 'student') {
+      return res.status(403).json({ error: 'Access denied. Only students can check submission status.' });
     }
 
     const result = await client.execute({

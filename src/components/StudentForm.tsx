@@ -64,22 +64,27 @@ export function StudentForm() {
     const checkStatus = async () => {
       try {
         const token = auth.getToken();
-        if (!token) {
+        const role = auth.getRole();
+
+        if (!token || !role) {
           navigate('/login');
           return;
         }
 
-        // Only check status if user is a student
-        if (auth.getRole() === 'student') {
+        // For admin, don't check submission status
+        if (role === 'admin') {
+          setIsLoading(false);
+          return;
+        }
+
+        // For students, check submission status
+        try {
           const status = await checkSubmissionStatus(token);
           setSubmissionStatus(status);
-        }
-      } catch (error) {
-        if ((error as Error).message === 'Access denied. Only students can check submission status.') {
-          // If admin, just continue without checking status
-          setSubmissionStatus({ submitted: false });
-        } else {
+        } catch (error) {
           console.error('Error checking submission status:', error);
+          // If there's an error checking status, log out the user
+          auth.logout();
           navigate('/login');
         }
       } finally {
@@ -138,8 +143,8 @@ export function StudentForm() {
     );
   }
 
-  // Show submission status message if already submitted
-  if (submissionStatus?.submitted) {
+  // Show submission status message if already submitted (only for students)
+  if (auth.getRole() === 'student' && submissionStatus?.submitted) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
