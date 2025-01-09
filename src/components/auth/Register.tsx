@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { auth } from '../../services/auth';
 import { Info } from '@phosphor-icons/react';
 
@@ -9,6 +9,7 @@ export function Register() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,14 +23,9 @@ export function Register() {
     setIsLoading(true);
 
     try {
-      const data = await auth.register(email, password);
-      
-      // Redirect based on role
-      if (data.role === 'admin') {
-        window.location.href = '/admin';
-      } else {
-        window.location.href = '/student';
-      }
+      await auth.register(email, password);
+      // After successful registration, redirect to login
+      navigate('/login');
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Registration failed');
     } finally {
