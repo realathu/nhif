@@ -98,3 +98,8 @@ export const getAuthToken = (): string => {
   }
   return token;
 };
+
+// Helper function to get role
+export const getRole = (): string | null => {
+  return auth.getRole();
+};

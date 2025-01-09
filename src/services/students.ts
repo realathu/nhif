@@ -1,4 +1,4 @@
-import { getAuthToken } from './auth';
+import { getAuthToken, getRole } from './auth';
 import { API_ENDPOINTS } from '../config';
 
 export type Student = {
@@ -260,6 +260,12 @@ export async function submitStudentInfo(data: any, token: string) {
 }
 
 export async function checkSubmissionStatus(token: string): Promise<SubmissionStatus> {
+  // Only make the API call if user is a student
+  const role = getRole();
+  if (role !== 'student') {
+    throw new Error('Access denied. Only students can check submission status.');
+  }
+
   const response = await fetch(`${API_ENDPOINTS.status}`, {
     method: 'GET',
     headers: {

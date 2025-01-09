@@ -71,26 +71,22 @@ export function StudentForm() {
           return;
         }
 
-        // For admin, skip status check and show form
-        if (role === 'admin') {
+        // For non-student users, skip status check and show form
+        if (role !== 'student') {
           setIsLoading(false);
           return;
         }
 
-        // For students, check submission status
+        // Only check submission status for students
         const status = await checkSubmissionStatus(token);
         setSubmissionStatus(status);
       } catch (error) {
-        // Handle specific error for non-student users
-        if ((error as Error).message === 'Access denied. Only students can check submission status.') {
-          // Just show the form for non-student users
-          setIsLoading(false);
-          return;
-        }
-        
         console.error('Error checking submission status:', error);
-        auth.logout();
-        navigate('/login');
+        // Only log out if it's not a permission error
+        if (!(error as Error).message.includes('Access denied')) {
+          auth.logout();
+          navigate('/login');
+        }
       } finally {
         setIsLoading(false);
       }
@@ -148,7 +144,8 @@ export function StudentForm() {
   }
 
   // Show submission status message if already submitted (only for students)
-  if (auth.getRole() === 'student' && submissionStatus?.submitted) {
+  const currentRole = auth.getRole();
+  if (currentRole === 'student' && submissionStatus?.submitted) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
