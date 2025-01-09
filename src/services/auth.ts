@@ -2,6 +2,7 @@ import { API_ENDPOINTS } from '../config';
 
 const TOKEN_KEY = 'token';
 const ROLE_KEY = 'role';
+const SUBMISSION_STATUS_KEY = 'submission_status';
 
 export const auth = {
   async login(email: string, password: string) {
@@ -25,6 +26,26 @@ export const auth = {
       const data = await response.json();
       this.setToken(data.token);
       this.setRole(data.role);
+
+      // If student, check submission status
+      if (data.role === 'student') {
+        try {
+          const statusResponse = await fetch(API_ENDPOINTS.status, {
+            headers: {
+              'Authorization': `Bearer ${data.token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (statusResponse.ok) {
+            const status = await statusResponse.json();
+            localStorage.setItem(SUBMISSION_STATUS_KEY, JSON.stringify(status));
+          }
+        } catch (error) {
+          console.error('Error checking submission status:', error);
+        }
+      }
+
       return data;
     } catch (error) {
       if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
@@ -80,9 +101,15 @@ export const auth = {
     return localStorage.getItem(ROLE_KEY);
   },
 
+  getSubmissionStatus() {
+    const status = localStorage.getItem(SUBMISSION_STATUS_KEY);
+    return status ? JSON.parse(status) : null;
+  },
+
   logout() {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(ROLE_KEY);
+    localStorage.removeItem(SUBMISSION_STATUS_KEY);
   },
 
   isAuthenticated(): boolean {

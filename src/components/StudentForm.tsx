@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as yup from 'yup';
-import { Warning, CheckCircle, CircleNotch } from '@phosphor-icons/react';
-import { checkSubmissionStatus } from '../services/students';
+import { Warning } from '@phosphor-icons/react';
 import { auth } from '../services/auth';
 
 const validationSchema = yup.object().shape({
@@ -34,8 +33,6 @@ const validationSchema = yup.object().shape({
 
 export function StudentForm() {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
-  const [submissionStatus, setSubmissionStatus] = useState<any>(null);
   const [formData, setFormData] = useState({
     form_four_index_no: "",
     first_name: "",
@@ -58,44 +55,24 @@ export function StudentForm() {
   const [admissionDates, setAdmissionDates] = useState<string[]>([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [userEmail, setUserEmail] = useState<string>("");
-  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
   useEffect(() => {
-    const checkStatus = async () => {
-      try {
-        const token = auth.getToken();
-        const role = auth.getRole();
+    const token = auth.getToken();
+    const role = auth.getRole();
+    const submissionStatus = auth.getSubmissionStatus();
 
-        if (!token || !role) {
-          navigate('/login');
-          return;
-        }
+    if (!token || !role) {
+      navigate('/login');
+      return;
+    }
 
-        // For non-student users, skip status check and show form
-        if (role !== 'student') {
-          setIsLoading(false);
-          return;
-        }
-
-        // Only check submission status for students
-        const status = await checkSubmissionStatus(token);
-        setSubmissionStatus(status);
-      } catch (error) {
-        console.error('Error checking submission status:', error);
-        // Only log out if it's not a permission error
-        if (!(error as Error).message.includes('Access denied')) {
-          auth.logout();
-          navigate('/login');
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkStatus();
+    // If student has already submitted, redirect to status page
+    if (role === 'student' && submissionStatus?.submitted) {
+      navigate('/status', { state: { submissionStatus } });
+      return;
+    }
 
     // Get user email from token
-    const token = auth.getToken();
     if (token) {
       try {
         const tokenData = JSON.parse(atob(token.split('.')[1]));
@@ -133,48 +110,6 @@ export function StudentForm() {
 
     fetchDynamicFields();
   }, [navigate]);
-
-  // Show loading spinner while checking status
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <CircleNotch size={32} className="text-blue-600 animate-spin" />
-      </div>
-    );
-  }
-
-  // Show submission status message if already submitted (only for students)
-  const currentRole = auth.getRole();
-  if (currentRole === 'student' && submissionStatus?.submitted) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <CheckCircle size={32} weight="fill" className="text-green-500" />
-            <h2 className="text-xl font-semibold text-gray-900">Already Submitted</h2>
-          </div>
-          
-          <div className="space-y-4">
-            <p className="text-gray-600">
-              Dear {submissionStatus.name},<br />
-              Your NHIF details were submitted on {submissionStatus.submissionDate ? new Date(submissionStatus.submissionDate).toLocaleDateString() : 'N/A'}.
-              For any changes, please contact the Dean's Office.
-            </p>
-
-            <button
-              onClick={() => {
-                auth.logout();
-                navigate('/login');
-              }}
-              className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -228,7 +163,7 @@ export function StudentForm() {
         throw new Error('Failed to submit form');
       }
 
-      setShowSuccessDialog(true);
+      // Removed setShowSuccessDialog(true);
     } catch (error) {
       console.error('Form submission error:', error);
       alert(error instanceof Error ? error.message : "Failed to submit form");
@@ -501,46 +436,6 @@ export function StudentForm() {
           </button>
         </div>
       </form>
-
-      {/* Success Dialog */}
-      {showSuccessDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
-            <div className="flex items-center gap-3 mb-4">
-              <CheckCircle size={32} weight="fill" className="text-green-500" />
-              <h2 className="text-xl font-semibold text-gray-900">Successfully Submitted</h2>
-            </div>
-            
-            <div className="space-y-4">
-              <p className="text-gray-600">
-                Dear {formData.first_name},<br /><br />
-                Your information has been submitted to the Dean's Office. You will receive your NHIF control number via SMS for payment once processed.
-              </p>
-
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="font-medium text-gray-900 mb-2">What's Next:</h3>
-                <ul className="text-gray-600 space-y-1">
-                  <li className="flex items-center gap-2">
-                    <span className="block w-1 h-1 rounded-full bg-gray-400"></span>
-                    Wait for an SMS with your NHIF control number
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="block w-1 h-1 rounded-full bg-gray-400"></span>
-                    Use the control number to make your payment
-                  </li>
-                </ul>
-              </div>
-
-              <button
-                onClick={handleLogout}
-                className="w-full px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
-              >
-                Close & Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Confirmation Dialog */}
       {showConfirmation && (
