@@ -140,7 +140,7 @@ export function StudentForm() {
           <div className="space-y-4">
             <p className="text-gray-600">
               Dear {submissionStatus.name},<br />
-              Your NHIF details were submitted on {new Date(submissionStatus.submissionDate).toLocaleDateString()}. 
+              Your NHIF details were submitted on {submissionStatus.submissionDate ? new Date(submissionStatus.submissionDate).toLocaleDateString() : 'N/A'}.
               For any changes, please contact the Dean's Office.
             </p>
 
@@ -163,8 +163,11 @@ export function StudentForm() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    // Clear error when field is edited
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: undefined }));
+      const newErrors = { ...errors };
+      delete newErrors[name];
+      setErrors(newErrors);
     }
   };
 
@@ -173,11 +176,13 @@ export function StudentForm() {
     try {
       await validationSchema.validate(formData, { abortEarly: false });
       setShowConfirmation(true);
-    } catch (error) {
-      if (error.inner) {
-        const newErrors = {};
-        error.inner.forEach(err => {
-          newErrors[err.path] = err.message;
+    } catch (err) {
+      if (err instanceof yup.ValidationError) {
+        const newErrors: Record<string, string> = {};
+        err.inner.forEach((error) => {
+          if (error.path) {
+            newErrors[error.path] = error.message;
+          }
         });
         setErrors(newErrors);
       }
@@ -204,12 +209,13 @@ export function StudentForm() {
       });
 
       if (!response.ok) {
-        throw new Error('Submission failed');
+        throw new Error('Failed to submit form');
       }
 
       setShowSuccessDialog(true);
     } catch (error) {
-      alert(error.message || "Failed to submit form");
+      console.error('Form submission error:', error);
+      alert(error instanceof Error ? error.message : "Failed to submit form");
     } finally {
       setIsSubmitting(false);
     }

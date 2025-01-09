@@ -1,4 +1,5 @@
 import { createClient } from '@libsql/client';
+import * as bcryptjs from 'bcryptjs';
 
 const client = createClient({
   url: process.env.LIBSQL_URL || 'file:local.db',
@@ -51,18 +52,21 @@ export async function initializeDatabase() {
     );
   `);
 
-  // Insert initial admin account
-  const adminExists = await client.execute({
-    sql: 'SELECT * FROM users WHERE email = ?',
-    args: ['dean@dmi.ac.tz']
-  });
+  // Initialize admin user
+  const initializeAdmin = async (db: any) => {
+    const adminExists = db.prepare('SELECT * FROM users WHERE email = ?').get('dean@dmi.ac.tz');
+    
+    if (!adminExists) {
+      const hashedPassword = await bcryptjs.hash('pass123#', 10);
+      db.prepare('INSERT INTO users (email, password, role) VALUES (?, ?, ?)').run(
+        'dean@dmi.ac.tz',
+        hashedPassword,
+        'admin'
+      );
+    }
+  };
 
-  if (!adminExists.rows.length) {
-    await client.execute({
-      sql: 'INSERT INTO users (email, password, role) VALUES (?, ?, ?)',
-      args: ['dean@dmi.ac.tz', await bcrypt.hash('pass123#', 10), 'admin']
-    });
-  }
+  await initializeAdmin(client);
 }
 
 export { client };

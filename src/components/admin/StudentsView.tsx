@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { DownloadSimple, Eye, Export } from '@phosphor-icons/react';
 import { 
   Student, 
