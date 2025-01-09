@@ -5,6 +5,7 @@ export const API_ENDPOINTS = {
   // Auth endpoints
   login: `${API_BASE}/api/auth/login`,
   register: `${API_BASE}/api/auth/register`,
+  verify: `${API_BASE}/api/auth/verify`,
   
   // Student endpoints
   students: `${API_BASE}/api/students`,

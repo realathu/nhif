@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { API_ENDPOINTS } from '../config';
+import { auth } from '../services/auth';
 
 type DynamicFieldsManagerProps = {
   defaultFieldName?: string;
@@ -24,10 +26,10 @@ export function DynamicFieldsManager({ defaultFieldName = '' }: DynamicFieldsMan
     try {
       setIsLoading(true);
       setError(null);
-      const token = localStorage.getItem('token');
+      const token = auth.getToken();
       if (!token) throw new Error('Not authenticated');
 
-      const response = await fetch(`http://localhost:3000/dynamic-fields/${name}`, {
+      const response = await fetch(`${API_ENDPOINTS.dynamicFields}/${name}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -59,10 +61,10 @@ export function DynamicFieldsManager({ defaultFieldName = '' }: DynamicFieldsMan
       setIsSubmitting(true);
       setError(null);
       setSuccessMessage(null);
-      const token = localStorage.getItem('token');
+      const token = auth.getToken();
       if (!token) throw new Error('Not authenticated');
 
-      const response = await fetch('http://localhost:3000/dynamic-fields', {
+      const response = await fetch(API_ENDPOINTS.dynamicFields, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -95,10 +97,10 @@ export function DynamicFieldsManager({ defaultFieldName = '' }: DynamicFieldsMan
       setIsLoading(true);
       setError(null);
       setSuccessMessage(null);
-      const token = localStorage.getItem('token');
+      const token = auth.getToken();
       if (!token) throw new Error('Not authenticated');
 
-      const response = await fetch('http://localhost:3000/dynamic-fields', {
+      const response = await fetch(API_ENDPOINTS.dynamicFields, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
