@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import * as yup from "yup";
+import * as yup from 'yup';
 import { Warning, CheckCircle, CircleNotch } from '@phosphor-icons/react';
 import { checkSubmissionStatus, SubmissionStatus } from '../services/students';
+import { getAuthToken } from '../services/auth';
 
 const validationSchema = yup.object().shape({
   form_four_index_no: yup.string().required("Form Four Index Number is required"),
@@ -60,22 +61,17 @@ export function StudentForm() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
   useEffect(() => {
-    // Check authentication
-    const token = localStorage.getItem('token');
-    const role = localStorage.getItem('role');
-    
-    if (!token || role !== 'student') {
-      navigate('/login');
-      return;
-    }
-
-    // Check submission status
     const checkStatus = async () => {
       try {
-        const status = await checkSubmissionStatus();
+        const token = getAuthToken();
+        if (!token) {
+          navigate('/login');
+          return;
+        }
+        const status = await checkSubmissionStatus(token);
         setSubmissionStatus(status);
       } catch (error) {
-        console.error('Failed to check submission status:', error);
+        console.error('Error checking submission status:', error);
       } finally {
         setIsLoading(false);
       }
@@ -84,16 +80,22 @@ export function StudentForm() {
     checkStatus();
 
     // Get user email from token
-    try {
-      const tokenData = JSON.parse(atob(token.split('.')[1]));
-      setUserEmail(tokenData.email || "Student");
-    } catch (error) {
-      console.error('Failed to decode token:', error);
+    const token = getAuthToken();
+    if (token) {
+      try {
+        const tokenData = JSON.parse(atob(token.split('.')[1]));
+        setUserEmail(tokenData.email || "Student");
+      } catch (error) {
+        console.error('Error parsing token:', error);
+      }
     }
 
     // Fetch dynamic fields
     const fetchDynamicFields = async () => {
       try {
+        const token = getAuthToken();
+        if (!token) return;
+
         const [coursesRes, datesRes] = await Promise.all([
           fetch('/api/dynamic-fields/course_name', {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -103,17 +105,14 @@ export function StudentForm() {
           })
         ]);
 
-        if (coursesRes.ok) {
+        if (coursesRes.ok && datesRes.ok) {
           const courses = await coursesRes.json();
-          setCourseOptions(courses);
-        }
-
-        if (datesRes.ok) {
           const dates = await datesRes.json();
+          setCourseOptions(courses);
           setAdmissionDates(dates);
         }
       } catch (error) {
-        console.error('Failed to fetch dynamic fields:', error);
+        console.error('Error fetching dynamic fields:', error);
       }
     };
 
@@ -194,7 +193,7 @@ export function StudentForm() {
       setIsSubmitting(true);
       setShowConfirmation(false);
       
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       if (!token) {
         throw new Error('Not authenticated');
       }

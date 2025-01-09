@@ -1,4 +1,5 @@
 import { getAuthToken } from './auth';
+import { API_ENDPOINTS } from '../config';
 
 export type Student = {
   id: number;
@@ -53,11 +54,9 @@ export interface SubmissionStatus {
   submissionDate?: string;
 }
 
-const API_BASE = 'http://localhost:3000';
-
 export async function fetchStudents(): Promise<Student[]> {
   const token = getAuthToken();
-  const response = await fetch(`${API_BASE}/students`, {
+  const response = await fetch(`${API_ENDPOINTS.students}`, {
     headers: {
       'Authorization': `Bearer ${token}`
     }
@@ -73,7 +72,7 @@ export async function fetchStudents(): Promise<Student[]> {
 
 export async function fetchStudent(id: number): Promise<Student> {
   const token = getAuthToken();
-  const response = await fetch(`${API_BASE}/students/${id}`, {
+  const response = await fetch(`${API_ENDPOINTS.students}/${id}`, {
     headers: {
       'Authorization': `Bearer ${token}`
     }
@@ -89,7 +88,7 @@ export async function fetchStudent(id: number): Promise<Student> {
 
 export async function exportStudent(id: number): Promise<void> {
   const token = getAuthToken();
-  const response = await fetch(`${API_BASE}/students/${id}/export`, {
+  const response = await fetch(`${API_ENDPOINTS.students}/${id}/export`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`
@@ -104,7 +103,7 @@ export async function exportStudent(id: number): Promise<void> {
 
 export async function exportStudents(ids: number[]): Promise<void> {
   const token = getAuthToken();
-  const response = await fetch(`${API_BASE}/students/export/batch`, {
+  const response = await fetch(`${API_ENDPOINTS.students}/export/batch`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -121,7 +120,7 @@ export async function exportStudents(ids: number[]): Promise<void> {
 
 export async function exportNewStudents(): Promise<void> {
   const token = getAuthToken();
-  const response = await fetch(`${API_BASE}/students/export/new`, {
+  const response = await fetch(`${API_ENDPOINTS.students}/export/new`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`
@@ -154,7 +153,7 @@ export async function exportNewStudents(): Promise<void> {
 
 export async function exportSelectedStudents(ids: number[]): Promise<void> {
   const token = getAuthToken();
-  const response = await fetch(`${API_BASE}/students/export/selected`, {
+  const response = await fetch(`${API_ENDPOINTS.students}/export/selected`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -186,7 +185,7 @@ export async function exportSelectedStudents(ids: number[]): Promise<void> {
 
 export async function fetchStudentStats(): Promise<StudentStats> {
   const token = getAuthToken();
-  const response = await fetch(`${API_BASE}/students/stats/summary`, {
+  const response = await fetch(`${API_ENDPOINTS.students}/stats/summary`, {
     headers: {
       'Authorization': `Bearer ${token}`
     }
@@ -202,7 +201,7 @@ export async function fetchStudentStats(): Promise<StudentStats> {
 
 export async function exportAllPending(): Promise<void> {
   const token = getAuthToken();
-  const response = await fetch(`${API_BASE}/admin/students/export-all-pending`, {
+  const response = await fetch(`${API_ENDPOINTS.admin}/students/export-all-pending`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`
@@ -228,7 +227,7 @@ export async function exportAllPending(): Promise<void> {
 
 export async function fetchDashboardStats(): Promise<DashboardStats> {
   const token = getAuthToken();
-  const response = await fetch(`${API_BASE}/dashboard/stats`, {
+  const response = await fetch(`${API_ENDPOINTS.dashboard}/stats`, {
     headers: {
       'Authorization': `Bearer ${token}`
     }
@@ -242,9 +241,26 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
   return response.json();
 }
 
-export async function checkSubmissionStatus(): Promise<SubmissionStatus> {
-  const token = getAuthToken();
-  const response = await fetch(`${API_BASE}/students/submission-status`, {
+export async function submitStudentInfo(data: any, token: string) {
+  const response = await fetch(`${API_ENDPOINTS.students}/submit`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to submit student information');
+  }
+
+  return response.json();
+}
+
+export async function checkSubmissionStatus(token: string): Promise<SubmissionStatus> {
+  const response = await fetch(`${API_ENDPOINTS.students}/status`, {
     headers: {
       'Authorization': `Bearer ${token}`
     }
@@ -259,7 +275,7 @@ export async function checkSubmissionStatus(): Promise<SubmissionStatus> {
 
 export async function clearAllStudentData(): Promise<{ studentsRemoved: number; usersRemoved: number }> {
   const token = getAuthToken();
-  const response = await fetch(`${API_BASE}/admin/clear-student-data`, {
+  const response = await fetch(`${API_ENDPOINTS.admin}/clear-student-data`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`

@@ -1,3 +1,5 @@
+import { API_ENDPOINTS } from '../config';
+
 const TOKEN_KEY = 'token';
 const ROLE_KEY = 'role';
 
@@ -25,6 +27,40 @@ export const auth = {
 
   isAuthenticated(): boolean {
     return !!this.getToken();
+  },
+
+  async login(email: string, password: string) {
+    const response = await fetch(API_ENDPOINTS.login, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Login failed');
+    }
+
+    return response.json();
+  },
+
+  async register(email: string, password: string) {
+    const response = await fetch(API_ENDPOINTS.register, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Registration failed');
+    }
+
+    return response.json();
   }
 };
 
