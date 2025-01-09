@@ -1,12 +1,19 @@
-// Force production URL when deployed
-const API_BASE = 'https://library.dmi.ac.tz/api';
+// API Configuration
+const API_BASE = 'https://library.dmi.ac.tz';
 
 export const API_ENDPOINTS = {
-  login: `${API_BASE}/auth/login`,
-  register: `${API_BASE}/auth/register`,
-  students: `${API_BASE}/students`,
-  dynamicFields: `${API_BASE}/dynamic-fields`,
-  admin: `${API_BASE}/admin`,
-  dashboard: `${API_BASE}/dashboard`,
-  status: `${API_BASE}/students/status`
+  // Auth endpoints
+  login: `${API_BASE}/api/auth/login`,
+  register: `${API_BASE}/api/auth/register`,
+  
+  // Student endpoints
+  students: `${API_BASE}/api/students`,
+  status: `${API_BASE}/api/students/status`,
+  
+  // Dynamic fields
+  dynamicFields: `${API_BASE}/api/dynamic-fields`,
+  
+  // Admin endpoints
+  admin: `${API_BASE}/api/admin`,
+  dashboard: `${API_BASE}/api/dashboard`
 };

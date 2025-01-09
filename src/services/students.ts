@@ -260,13 +260,18 @@ export async function submitStudentInfo(data: any, token: string) {
 }
 
 export async function checkSubmissionStatus(token: string): Promise<SubmissionStatus> {
-  const response = await fetch(`${API_ENDPOINTS.students}/status`, {
+  const response = await fetch(`${API_ENDPOINTS.status}`, {
+    method: 'GET',
     headers: {
-      'Authorization': `Bearer ${token}`
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
     }
   });
 
   if (!response.ok) {
+    if (response.status === 403) {
+      throw new Error('Access denied. Only students can check submission status.');
+    }
     throw new Error('Failed to check submission status');
   }
 

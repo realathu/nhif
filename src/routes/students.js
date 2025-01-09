@@ -5,9 +5,55 @@ const router = express.Router();
 
 router.use(authMiddleware);
 
+// Check submission status
+router.get('/status', async (req, res) => {
+  try {
+    // Allow both student and admin roles
+    if (!['student', 'admin'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const result = await client.execute({
+      sql: 'SELECT * FROM student_info WHERE user_id = ?',
+      args: [req.user.id]
+    });
+
+    if (result.rows.length > 0) {
+      const student = result.rows[0];
+      res.json({
+        submitted: true,
+        name: `${student.first_name} ${student.middle_name} ${student.last_name}`.trim(),
+        submissionDate: student.created_at
+      });
+    } else {
+      res.json({
+        submitted: false
+      });
+    }
+  } catch (error) {
+    console.error('Error checking submission status:', error);
+    res.status(500).json({ error: 'Failed to check submission status' });
+  }
+});
+
 // Submit student information
 router.post('/submit', async (req, res) => {
   try {
+    // Only allow student role
+    if (req.user.role !== 'student') {
+      return res.status(403).json({ error: 'Only students can submit information' });
+    }
+
+    // Check if student has already submitted
+    const existingSubmission = await client.execute({
+      sql: 'SELECT id FROM student_info WHERE user_id = ?',
+      args: [req.user.id]
+    });
+
+    if (existingSubmission.rows.length > 0) {
+      return res.status(400).json({ error: 'Student information already submitted' });
+    }
+
     const studentInfo = req.body;
     const result = await client.execute({
       sql: `INSERT INTO student_info (
