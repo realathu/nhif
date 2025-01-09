@@ -71,22 +71,26 @@ export function StudentForm() {
           return;
         }
 
-        // For admin, don't check submission status
+        // For admin, skip status check and show form
         if (role === 'admin') {
           setIsLoading(false);
           return;
         }
 
         // For students, check submission status
-        try {
-          const status = await checkSubmissionStatus(token);
-          setSubmissionStatus(status);
-        } catch (error) {
-          console.error('Error checking submission status:', error);
-          // If there's an error checking status, log out the user
-          auth.logout();
-          navigate('/login');
+        const status = await checkSubmissionStatus(token);
+        setSubmissionStatus(status);
+      } catch (error) {
+        // Handle specific error for non-student users
+        if ((error as Error).message === 'Access denied. Only students can check submission status.') {
+          // Just show the form for non-student users
+          setIsLoading(false);
+          return;
         }
+        
+        console.error('Error checking submission status:', error);
+        auth.logout();
+        navigate('/login');
       } finally {
         setIsLoading(false);
       }
