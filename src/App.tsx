@@ -20,7 +20,14 @@ function App() {
             </PrivateRoute>
           } 
         />
-        <Route path="/form" element={<StudentForm />} />
+        <Route 
+          path="/form" 
+          element={
+            <PrivateRoute requiredRole="student">
+              <StudentForm />
+            </PrivateRoute>
+          } 
+        />
         <Route 
           path="*" 
           element={

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import * as yup from 'yup';
 import { Warning, CheckCircle, CircleNotch } from '@phosphor-icons/react';
 import { checkSubmissionStatus, SubmissionStatus } from '../services/students';
-import { getAuthToken } from '../services/auth';
+import { auth } from '../services/auth';
 
 const validationSchema = yup.object().shape({
   form_four_index_no: yup.string().required("Form Four Index Number is required"),
@@ -35,6 +35,7 @@ const validationSchema = yup.object().shape({
 export function StudentForm() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
+  const [submissionStatus, setSubmissionStatus] = useState<SubmissionStatus | null>(null);
   const [formData, setFormData] = useState({
     form_four_index_no: "",
     first_name: "",
@@ -55,19 +56,19 @@ export function StudentForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [courseOptions, setCourseOptions] = useState<string[]>([]);
   const [admissionDates, setAdmissionDates] = useState<string[]>([]);
-  const [userEmail, setUserEmail] = useState<string>("");
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [submissionStatus, setSubmissionStatus] = useState<SubmissionStatus | null>(null);
+  const [userEmail, setUserEmail] = useState<string>("");
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
   useEffect(() => {
     const checkStatus = async () => {
       try {
-        const token = getAuthToken();
+        const token = auth.getToken();
         if (!token) {
           navigate('/login');
           return;
         }
+
         const status = await checkSubmissionStatus(token);
         setSubmissionStatus(status);
       } catch (error) {
@@ -80,7 +81,7 @@ export function StudentForm() {
     checkStatus();
 
     // Get user email from token
-    const token = getAuthToken();
+    const token = auth.getToken();
     if (token) {
       try {
         const tokenData = JSON.parse(atob(token.split('.')[1]));
@@ -93,7 +94,7 @@ export function StudentForm() {
     // Fetch dynamic fields
     const fetchDynamicFields = async () => {
       try {
-        const token = getAuthToken();
+        const token = auth.getToken();
         if (!token) return;
 
         const [coursesRes, datesRes] = await Promise.all([
@@ -119,6 +120,7 @@ export function StudentForm() {
     fetchDynamicFields();
   }, [navigate]);
 
+  // Show loading spinner while checking status
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -127,6 +129,7 @@ export function StudentForm() {
     );
   }
 
+  // Show submission status message if already submitted
   if (submissionStatus?.submitted) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -145,9 +148,8 @@ export function StudentForm() {
 
             <button
               onClick={() => {
-                localStorage.removeItem('token');
-                localStorage.removeItem('role');
-                window.location.href = '/login';
+                auth.logout();
+                navigate('/login');
               }}
               className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
             >
@@ -193,7 +195,7 @@ export function StudentForm() {
       setIsSubmitting(true);
       setShowConfirmation(false);
       
-      const token = getAuthToken();
+      const token = auth.getToken();
       if (!token) {
         throw new Error('Not authenticated');
       }
@@ -221,9 +223,8 @@ export function StudentForm() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    window.location.href = '/login';
+    auth.logout();
+    navigate('/login');
   };
 
   return (
@@ -235,11 +236,7 @@ export function StudentForm() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
           <span className="text-sm text-gray-600">Welcome, {userEmail}</span>
           <button
-            onClick={() => {
-              localStorage.removeItem('token');
-              localStorage.removeItem('role');
-              window.location.href = '/login';
-            }}
+            onClick={handleLogout}
             className="text-sm text-red-600 hover:text-red-800 transition-colors"
           >
             Logout
