@@ -1,6 +1,5 @@
-const API_BASE = import.meta.env.PROD 
-  ? 'https://library.dmi.ac.tz' 
-  : 'http://localhost:3000';
+// Force production URL when deployed
+const API_BASE = 'https://library.dmi.ac.tz';
 
 export const API_ENDPOINTS = {
   login: `${API_BASE}/auth/login`,
